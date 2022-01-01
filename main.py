@@ -9,6 +9,18 @@ import random
 import json
 
 with open("data.json") as file:
-    data = json.load(file)
+    data_file = json.load(file)
 
-print(data)
+words = []
+labels = []
+docs = []
+
+for data in data_file["data"]:
+    for pattern in data["patterns"]:
+        word = nltk.word_tokenize(pattern)
+        words.extend(word)
+        docs.append(pattern)
+
+    if data["tag"] not in labels:
+        labels.append(data["tag"])
+
