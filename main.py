@@ -2,7 +2,7 @@ import nltk
 from nltk.stem.lancaster import LancasterStemmer
 stemmer = LancasterStemmer()
 
-import numpy
+import numpy as np
 import tflearn
 import tensorflow
 import random
@@ -26,9 +26,35 @@ for data in data_file["data"]:  #loading json file
     if data["tag"] not in labels:
         labels.append(data["tag"])
 
-words = [stemmer.stem(w.lower()) for w in words] #convert all word to lower case
+words = [stemmer.stem(w.lower()) for w in words if w != "?"] #convert all word to lower case
 words = sorted(list(set(words))) #remove all duplicate and got a sorted list
 
 labels = sorted(labels)
 
-#making a bag for words
+#making a bag for words for determine occurence of words
+train = []
+output = []
+
+out_empty = [0 for _ in range(len(labels))]
+
+for x,doc in enumerate(docs_x):
+    bag = []
+
+    word = [stemmer.stem(w) for w in doc] #stem the words
+
+    #going through all the stem word
+    for w in words:
+        if w in word: #finding if word exist in current pattern
+            bag.append(1) #if exists
+        else:
+            bag.append(0)
+
+    output_row = out_empty[:]
+    output_row[labels.index(docs_y[x])] = 1
+
+    training.append([bag])
+    output.append(output_row)
+
+training = np.array(training)
+output = np.array(output)
+#above 2 array with be array consists of 0,1
