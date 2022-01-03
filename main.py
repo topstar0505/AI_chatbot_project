@@ -52,9 +52,9 @@ for x,doc in enumerate(docs_x):
     output_row = out_empty[:]
     output_row[labels.index(docs_y[x])] = 1
 
-    training.append([bag])
+    train.append([bag])
     output.append(output_row)
 
-training = np.array(training)
+train = np.array(train)
 output = np.array(output)
 #above 2 array with be array consists of 0,1
