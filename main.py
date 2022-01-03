@@ -20,13 +20,13 @@ for data in data_file["data"]:  #loading json file
     for pattern in data["patterns"]:
         word = nltk.word_tokenize(pattern)
         words.extend(word)
-        docs_x.append(pattern)
+        docs_x.append(word)
         docs_y.append(data["tag"]) #for classifying
 
     if data["tag"] not in labels:
         labels.append(data["tag"])
 
-words = [stemmer.stem(w.lower()) for w in words if w != "?"] #convert all word to lower case
+words = [stemmer.stem(w.lower()) for w in words if w != "?"] #convert all word to lower case and remove ?
 words = sorted(list(set(words))) #remove all duplicate and got a sorted list
 
 labels = sorted(labels)
@@ -58,3 +58,5 @@ for x,doc in enumerate(docs_x):
 train = np.array(train)
 output = np.array(output)
 #above 2 array with be array consists of 0,1
+
+#building model
