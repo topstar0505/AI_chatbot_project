@@ -2,61 +2,79 @@ import nltk
 from nltk.stem.lancaster import LancasterStemmer
 stemmer = LancasterStemmer()
 
-import numpy as np
+import numpy
 import tflearn
-import tensorflow
+import tensorflow as tf
 import random
 import json
+import pickle
 
-with open("data.json") as file:
-    data_file = json.load(file)
+with open("intents.json") as file:
+    data = json.load(file)
 
-words = []
-labels = []
-docs_x = [] #list of diff pattern
-docs_y = [] #entry for docs_x
+try:
+    with open("data.pickle", "rb") as f:
+        words, labels, train, output = pickle.load(f)
+except:
+    words = []
+    labels = []
+    docs_x = []
+    docs_y = []
 
-for data in data_file["data"]:  #loading json file
-    for pattern in data["patterns"]:
-        word = nltk.word_tokenize(pattern)
-        words.extend(word)
-        docs_x.append(word)
-        docs_y.append(data["tag"]) #for classifying
+    for intent in data["intents"]:
+        for pattern in intent["patterns"]:
+            word = nltk.word_tokenize(pattern)
+            words.extend(word)
+            docs_x.append(word)
+            docs_y.append(intent["tag"])
 
-    if data["tag"] not in labels:
-        labels.append(data["tag"])
+        if intent["tag"] not in labels:
+            labels.append(intent["tag"])
 
-words = [stemmer.stem(w.lower()) for w in words if w != "?"] #convert all word to lower case and remove ?
-words = sorted(list(set(words))) #remove all duplicate and got a sorted list
+    words = [stemmer.stem(w.lower()) for w in words if w != "?"]
+    words = sorted(list(set(words)))
 
-labels = sorted(labels)
+    labels = sorted(labels)
 
-#making a bag for words for determine occurence of words
-train = []
-output = []
+    train = []
+    output = []
 
-out_empty = [0 for _ in range(len(labels))]
+    out_empty = [0 for _ in range(len(labels))]
 
-for x,doc in enumerate(docs_x):
-    bag = []
+    for x, doc in enumerate(docs_x):
+        bag = []
 
-    word = [stemmer.stem(w) for w in doc] #stem the words
+        word = [stemmer.stem(w.lower()) for w in doc]
 
-    #going through all the stem word
-    for w in words:
-        if w in word: #finding if word exist in current pattern
-            bag.append(1) #if exists
-        else:
-            bag.append(0)
+        for w in words:
+            if w in word:
+                bag.append(1)
+            else:
+                bag.append(0)
 
-    output_row = out_empty[:]
-    output_row[labels.index(docs_y[x])] = 1
+        output_row = out_empty[:]
+        output_row[labels.index(docs_y[x])] = 1
 
-    train.append([bag])
-    output.append(output_row)
+        train.append(bag)
+        output.append(output_row)
 
-train = np.array(train)
-output = np.array(output)
-#above 2 array with be array consists of 0,1
 
-#building model
+    train = numpy.array(train)
+    output = numpy.array(output)
+
+    with open("data.pickle", "wb") as f:
+        pickle.dump((words, labels, train, output), f)
+
+#model building
+tf.compat.v1.reset_default_graph()
+
+net = tflearn.input_data(shape=[None, len(train[0])])
+net = tflearn.fully_connected(net, 8)
+net = tflearn.fully_connected(net, 8)
+net = tflearn.fully_connected(net, len(output[0]), activation="softmax")
+net = tflearn.regression(net)
+
+model = tflearn.DNN(net)
+
+model.fit(train, output, n_epoch=1000, batch_size=8, show_metric=True)
+model.save("model.tflearn")
